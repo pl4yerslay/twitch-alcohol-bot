@@ -15,7 +15,7 @@ export default async function handler(req, res) {
       "Content-Type": "application/json"
     };
 
-    // Aktualna sesja streama
+    // Pobieramy aktualną sesję
     const streamResponse = await fetch(
       `${supabaseUrl}/rest/v1/alcohol_streams?order=created_at.desc&limit=1`,
       { headers }
@@ -33,9 +33,9 @@ export default async function handler(req, res) {
 
     const currentStreamId = streams[0].id;
 
-    // Szukamy użytkownika tylko w aktualnej sesji
+    // Pobieramy użytkownika
     const userResponse = await fetch(
-      `${supabaseUrl}/rest/v1/alcohol_users?username=eq.${encodeURIComponent(username)}&stream_id=eq.${encodeURIComponent(currentStreamId)}`,
+      `${supabaseUrl}/rest/v1/alcohol_users?username=eq.${encodeURIComponent(username)}`,
       { headers }
     );
 
@@ -45,7 +45,7 @@ export default async function handler(req, res) {
 
     const users = await userResponse.json();
 
-    // Pierwszy shot użytkownika w tej sesji
+    // Użytkownik jeszcze nie istnieje
     if (users.length === 0) {
       const createResponse = await fetch(
         `${supabaseUrl}/rest/v1/alcohol_users`,
@@ -79,12 +79,44 @@ export default async function handler(req, res) {
 
     const user = users[0];
 
+    // NOWY STREAM
+    if (user.stream_id !== currentStreamId) {
+      const resetResponse = await fetch(
+        `${supabaseUrl}/rest/v1/alcohol_users?username=eq.${encodeURIComponent(username)}`,
+        {
+          method: "PATCH",
+          headers: {
+            ...headers,
+            Prefer: "return=representation"
+          },
+          body: JSON.stringify({
+            shots: 1,
+            beers: 0,
+            klins: 0,
+            promile: 0.40,
+            kac: 1.00,
+            stream_id: currentStreamId
+          })
+        }
+      );
+
+      if (!resetResponse.ok) {
+        const errorText = await resetResponse.text();
+        throw new Error(`Błąd resetowania użytkownika: ${errorText}`);
+      }
+
+      return res.status(200).send(
+        `🥃 @${username} wypił shota! To jego pierwszy dzisiaj! 🍾`
+      );
+    }
+
+    // TEN SAM STREAM
     const newShots = Number(user.shots || 0) + 1;
     const newPromile = Number(user.promile || 0) + 0.40;
     const newKac = Number(user.kac || 0) + 1.00;
 
     const updateResponse = await fetch(
-      `${supabaseUrl}/rest/v1/alcohol_users?id=eq.${user.id}`,
+      `${supabaseUrl}/rest/v1/alcohol_users?username=eq.${encodeURIComponent(username)}`,
       {
         method: "PATCH",
         headers: {
@@ -116,4 +148,4 @@ export default async function handler(req, res) {
       details: error.message
     });
   }
-      }
+  }
