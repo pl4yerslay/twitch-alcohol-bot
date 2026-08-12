@@ -50,7 +50,7 @@ export default async function handler(req, res) {
         throw new Error("Nie udało się utworzyć użytkownika");
       }
 
-      return res.status(200).json({
+      return res.status(200).send({
         message: `🥃 @${username} wypił shota! To jego pierwszy dzisiaj!`
       });
     }
@@ -77,7 +77,7 @@ export default async function handler(req, res) {
       throw new Error("Nie udało się zaktualizować użytkownika");
     }
 
-    return res.status(200).json({
+    return res.status(200).send({
       message: `🥃 @${username} wypił shota! To już ${user.shots + 1} dzisiaj. 🍾💀`
     });
 
