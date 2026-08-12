@@ -3,36 +3,66 @@ export default async function handler(req, res) {
     const clientId = process.env.TWITCH_CLIENT_ID;
     const clientSecret = process.env.TWITCH_CLIENT_SECRET;
 
-    // Pobranie tokenu aplikacji Twitch
+    if (!clientId) {
+      return res.status(500).json({
+        step: "client_id",
+        error: "Brak TWITCH_CLIENT_ID w Vercelu"
+      });
+    }
+
+    if (!clientSecret) {
+      return res.status(500).json({
+        step: "client_secret",
+        error: "Brak TWITCH_CLIENT_SECRET w Vercelu"
+      });
+    }
+
+    // Pobranie app access token
     const tokenResponse = await fetch(
-      `https://id.twitch.tv/oauth2/token?client_id=${clientId}&client_secret=${clientSecret}&grant_type=client_credentials`,
+      "https://id.twitch.tv/oauth2/token",
       {
-        method: "POST"
+        method: "POST",
+        headers: {
+          "Content-Type": "application/x-www-form-urlencoded"
+        },
+        body: new URLSearchParams({
+          client_id: clientId,
+          client_secret: clientSecret,
+          grant_type: "client_credentials"
+        })
       }
     );
 
-    if (!tokenResponse.ok) {
-      throw new Error("Nie udało się uzyskać tokenu Twitch");
-    }
-
     const tokenData = await tokenResponse.json();
 
-    // Sprawdzenie aktualnego streama
+    if (!tokenResponse.ok) {
+      return res.status(500).json({
+        step: "twitch_token",
+        status: tokenResponse.status,
+        error: tokenData
+      });
+    }
+
+    // Sprawdzenie streama
     const streamResponse = await fetch(
       "https://api.twitch.tv/helix/streams?user_login=pl4yerslay",
       {
         headers: {
           "Client-ID": clientId,
-          Authorization: `Bearer ${tokenData.access_token}`
+          "Authorization": `Bearer ${tokenData.access_token}`
         }
       }
     );
 
-    if (!streamResponse.ok) {
-      throw new Error("Nie udało się sprawdzić streama");
-    }
-
     const streamData = await streamResponse.json();
+
+    if (!streamResponse.ok) {
+      return res.status(500).json({
+        step: "twitch_stream",
+        status: streamResponse.status,
+        error: streamData
+      });
+    }
 
     if (streamData.data.length === 0) {
       return res.status(200).json({
@@ -51,10 +81,9 @@ export default async function handler(req, res) {
     });
 
   } catch (error) {
-    console.error(error);
-
     return res.status(500).json({
-      error: "Błąd podczas sprawdzania streama"
+      step: "server",
+      error: error.message
     });
   }
 }
