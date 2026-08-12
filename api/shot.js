@@ -11,37 +11,44 @@ export default async function handler(req, res) {
     const supabaseUrl = process.env.SUPABASE_URL;
     const supabaseKey = process.env.SUPABASE_KEY;
 
-    const response = await fetch(
+    const headers = {
+      apikey: supabaseKey,
+      Authorization: `Bearer ${supabaseKey}`,
+      "Content-Type": "application/json"
+    };
+
+    // Sprawdzenie, czy użytkownik już istnieje
+    const userResponse = await fetch(
       `${supabaseUrl}/rest/v1/alcohol_users?username=eq.${encodeURIComponent(username)}`,
       {
-        headers: {
-          apikey: supabaseKey,
-          Authorization: `Bearer ${supabaseKey}`
-        }
+        headers
       }
     );
 
-    if (!response.ok) {
-      throw new Error("Błąd połączenia z Supabase");
+    if (!userResponse.ok) {
+      throw new Error("Błąd podczas pobierania użytkownika");
     }
 
-    const users = await response.json();
+    const users = await userResponse.json();
 
+    // Nowy użytkownik
     if (users.length === 0) {
       const createResponse = await fetch(
         `${supabaseUrl}/rest/v1/alcohol_users`,
         {
           method: "POST",
           headers: {
-            apikey: supabaseKey,
-            Authorization: `Bearer ${supabaseKey}`,
-            "Content-Type": "application/json",
+            ...headers,
             Prefer: "return=representation"
           },
           body: JSON.stringify({
             username: username,
             shots: 1,
-            beers: 0
+            beers: 0,
+            klins: 0,
+            promile: 0.50,
+            kac: 1.00,
+            stream_id: null
           })
         }
       );
@@ -51,24 +58,29 @@ export default async function handler(req, res) {
       }
 
       return res.status(200).send(
-        `🥃 @${username} wypił shota! To jego pierwszy dzisiaj! 🍾💀`
+        `🥃 @${username} wypił shota! To jego pierwszy dzisiaj! 🍾`
       );
     }
 
     const user = users[0];
 
+    const newShots = (user.shots || 0) + 1;
+    const newPromile = Number(user.promile || 0) + 0.50;
+    const newKac = Number(user.kac || 0) + 1.00;
+
+    // Aktualizacja użytkownika
     const updateResponse = await fetch(
       `${supabaseUrl}/rest/v1/alcohol_users?username=eq.${encodeURIComponent(username)}`,
       {
         method: "PATCH",
         headers: {
-          apikey: supabaseKey,
-          Authorization: `Bearer ${supabaseKey}`,
-          "Content-Type": "application/json",
+          ...headers,
           Prefer: "return=representation"
         },
         body: JSON.stringify({
-          shots: user.shots + 1
+          shots: newShots,
+          promile: newPromile,
+          kac: newKac
         })
       }
     );
@@ -78,7 +90,7 @@ export default async function handler(req, res) {
     }
 
     return res.status(200).send(
-      `🥃 @${username} wypił shota! To już ${user.shots + 1} dzisiaj. 🍾💀`
+      `🥃 @${username} wypił shota! To już ${newShots} dzisiaj! 🍾`
     );
 
   } catch (error) {
