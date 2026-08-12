@@ -11,16 +11,27 @@ export default async function handler(req, res) {
       "Content-Type": "application/json"
     };
 
+    // Pobieramy aktualny stream
     const streamResponse = await fetch(
       `${supabaseUrl}/rest/v1/alcohol_streams?order=created_at.desc&limit=1`,
       { headers }
     );
 
-    const responseText = await streamResponse.text();
+    const streams = await streamResponse.json();
+    const currentStreamId = streams[0].id;
+
+    // Pobieramy użytkownika
+    const userResponse = await fetch(
+      `${supabaseUrl}/rest/v1/alcohol_users?username=eq.${encodeURIComponent(username)}&stream_id=eq.${encodeURIComponent(currentStreamId)}`,
+      { headers }
+    );
+
+    const userText = await userResponse.text();
 
     return res.status(200).json({
-      supabase_status: streamResponse.status,
-      supabase_response: responseText
+      stream_id: currentStreamId,
+      user_status: userResponse.status,
+      user_response: userText
     });
 
   } catch (error) {
