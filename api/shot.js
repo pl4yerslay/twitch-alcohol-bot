@@ -8,6 +8,14 @@ export default async function handler(req, res) {
 
     const supabaseUrl = process.env.SUPABASE_URL;
     const supabaseKey = process.env.SUPABASE_KEY;
+    
+    if (!supabaseUrl || !supabaseKey) {
+  return res.status(500).json({
+    error: "Brak zmiennych Supabase",
+    has_url: !!supabaseUrl,
+    has_key: !!supabaseKey
+  });
+    }
 
     const headers = {
       apikey: supabaseKey,
