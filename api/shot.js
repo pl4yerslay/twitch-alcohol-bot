@@ -60,7 +60,7 @@ export default async function handler(req, res) {
             shots: 1,
             beers: 0,
             klins: 0,
-            promile: 0.40,
+            promile: 0.80,
             kac: 1.00,
             stream_id: currentStreamId
           })
@@ -73,7 +73,7 @@ export default async function handler(req, res) {
       }
 
       return res.status(200).send(
-        `🥃 @${username} wypił shota! To jego pierwszy dzisiaj! 🍾`
+        `🥃 @${username} wypił shota! To jego pierwszy dzisiaj! 🍾 OCHLEJMORDA`
       );
     }
 
@@ -93,7 +93,7 @@ export default async function handler(req, res) {
             shots: 1,
             beers: 0,
             klins: 0,
-            promile: 0.40,
+            promile: 80.00,
             kac: 1.00,
             stream_id: currentStreamId
           })
@@ -106,13 +106,13 @@ export default async function handler(req, res) {
       }
 
       return res.status(200).send(
-        `🥃 @${username} wypił shota! To jego pierwszy dzisiaj! 🍾`
+        `🥃 @${username} wypił shota! To jego pierwszy dzisiaj! 🍾 OCHLEJMORDA`
       );
     }
 
     // TEN SAM STREAM
     const newShots = Number(user.shots || 0) + 1;
-    const newPromile = Number(user.promile || 0) + 0.40;
+    const newPromile = Number(user.promile || 0) + 80.00;
     const newKac = Number(user.kac || 0) + 1.00;
 
     const updateResponse = await fetch(
@@ -137,7 +137,7 @@ export default async function handler(req, res) {
     }
 
     return res.status(200).send(
-      `🥃 @${username} wypił shota! To już ${newShots} dzisiaj! 🍾`
+      `🥃 @${username} wypił shota! To już ${newShots} dzisiaj! 🍾 OCHLEJMORDA`
     );
 
   } catch (error) {
@@ -148,4 +148,4 @@ export default async function handler(req, res) {
       details: error.message
     });
   }
-  }
+ }
