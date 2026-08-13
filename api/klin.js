@@ -121,4 +121,31 @@ export default async function handler(req, res) {
         method: "PATCH",
         headers: {
           ...headers,
-          Prefer: "
+          Prefer: "return=representation"
+        },
+        body: JSON.stringify({
+          klins: newKlins,
+          promile: newPromile,
+          kac: newKac
+        })
+      }
+    );
+
+    if (!updateResponse.ok) {
+      const errorText = await updateResponse.text();
+      throw new Error(`Błąd aktualizacji użytkownika: ${errorText}`);
+    }
+
+    return res.status(200).send(
+      `🧊 @${username} wziął klina! 🍺 ŚWIEŻAK`
+    );
+
+  } catch (error) {
+    console.error(error);
+
+    return res.status(500).json({
+      error: "Wystąpił błąd serwera",
+      details: error.message
+    });
+  }
+}
