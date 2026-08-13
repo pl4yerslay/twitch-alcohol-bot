@@ -45,7 +45,7 @@ export default async function handler(req, res) {
 
     const users = await userResponse.json();
 
-    // Nowy użytkownik
+    // Użytkownik jeszcze nie istnieje
     if (users.length === 0) {
       const createResponse = await fetch(
         `${supabaseUrl}/rest/v1/alcohol_users`,
@@ -60,8 +60,8 @@ export default async function handler(req, res) {
             shots: 0,
             beers: 0,
             klins: 1,
-            promile: 0.20,
-            kac: 0.50,
+            promile: 0.30,
+            kac: 0,
             stream_id: currentStreamId
           })
         }
@@ -73,7 +73,7 @@ export default async function handler(req, res) {
       }
 
       return res.status(200).send(
-        `🍸 @${username} wali klina! To jego pierwszy dzisiaj! 🥴`
+        `🧊 @${username} wziął klina! 🍺 ŚWIEŻAK`
       );
     }
 
@@ -93,8 +93,8 @@ export default async function handler(req, res) {
             shots: 0,
             beers: 0,
             klins: 1,
-            promile: 0.20,
-            kac: 0.50,
+            promile: 0.30,
+            kac: 0,
             stream_id: currentStreamId
           })
         }
@@ -106,14 +106,14 @@ export default async function handler(req, res) {
       }
 
       return res.status(200).send(
-        `🍸 @${username} wali klina! To jego pierwszy dzisiaj! 🥴`
+        `🧊 @${username} wziął klina! 🍺 ŚWIEŻAK`
       );
     }
 
     // TEN SAM STREAM
     const newKlins = Number(user.klins || 0) + 1;
-    const newPromile = Number(user.promile || 0) + 0.20;
-    const newKac = Number(user.kac || 0) + 0.50;
+    const newPromile = Number(user.promile || 0) + 0.30;
+    const newKac = Math.max(0, Number(user.kac || 0) - 0.50);
 
     const updateResponse = await fetch(
       `${supabaseUrl}/rest/v1/alcohol_users?username=eq.${encodeURIComponent(username)}`,
@@ -121,31 +121,4 @@ export default async function handler(req, res) {
         method: "PATCH",
         headers: {
           ...headers,
-          Prefer: "return=representation"
-        },
-        body: JSON.stringify({
-          klins: newKlins,
-          promile: newPromile,
-          kac: newKac
-        })
-      }
-    );
-
-    if (!updateResponse.ok) {
-      const errorText = await updateResponse.text();
-      throw new Error(`Błąd aktualizacji użytkownika: ${errorText}`);
-    }
-
-    return res.status(200).send(
-      `🍸 @${username} wali klina! To już ${newKlins} dzisiaj! 🥴`
-    );
-
-  } catch (error) {
-    console.error(error);
-
-    return res.status(500).json({
-      error: "Wystąpił błąd serwera",
-      details: error.message
-    });
-  }
- }
+          Prefer: "
