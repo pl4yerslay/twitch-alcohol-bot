@@ -93,7 +93,7 @@ export default async function handler(req, res) {
             shots: 1,
             beers: 0,
             klins: 0,
-            promile: 80.00,
+            promile: 0.80,
             kac: 1.00,
             stream_id: currentStreamId
           })
@@ -112,7 +112,7 @@ export default async function handler(req, res) {
 
     // TEN SAM STREAM
     const newShots = Number(user.shots || 0) + 1;
-    const newPromile = Number(user.promile || 0) + 80.00;
+    const newPromile = Number(user.promile || 0) + 0.80;
     const newKac = Number(user.kac || 0) + 1.00;
 
     const updateResponse = await fetch(
