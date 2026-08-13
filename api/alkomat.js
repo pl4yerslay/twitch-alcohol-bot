@@ -66,4 +66,25 @@ export default async function handler(req, res) {
     } else if (promile < 1.60) {
       message = `🧪 Alkomat @${username}: ${promile.toFixed(2).replace(".", ",")}‰. 🟡 No dobra, już coś jest. 😂 🚨 POLICE 🚨`;
     } else if (promile < 2.20) {
-      message = `🧪 Alkom
+      message = `🧪 Alkomat @${username}: ${promile.toFixed(2).replace(".", ",")}‰. 🟠 Zaczyna być grubo. 🚨 POLICE 🚨`;
+    } else if (promile < 3.00) {
+      message = `🧪 Alkomat @${username}: ${promile.toFixed(2).replace(".", ",")}‰. 🔴 To już nie jest niewinne picie. 🚨 POLICE 🚨`;
+    } else if (promile < 3.80) {
+      message = `🧪 Alkomat @${username}: ${promile.toFixed(2).replace(".", ",")}‰. 🔴 Chat, chyba mamy problem. 😂 🚨 POLICE 🚨`;
+    } else if (promile < 4.00) {
+      message = `🧪 Alkomat @${username}: ${promile.toFixed(2).replace(".", ",")}‰. 💀 Organizm prosi o litość. 🚨 POLICE 🚨`;
+    } else {
+      message = `🧪 Alkomat @${username}: ${promile.toFixed(2).replace(".", ",")}‰. ☠️ Alkomat chyba właśnie stracił wiarę w ludzkość. 🚨 POLICE 🚨`;
+    }
+
+    return res.status(200).send(message);
+
+  } catch (error) {
+    console.error(error);
+
+    return res.status(500).json({
+      error: "Wystąpił błąd serwera",
+      details: error.message
+    });
+  }
+}
