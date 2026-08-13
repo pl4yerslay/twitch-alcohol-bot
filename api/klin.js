@@ -73,7 +73,7 @@ export default async function handler(req, res) {
       }
 
       return res.status(200).send(
-        `🧊 @${username} wziął klina! 🍺 ŚWIEŻAK`
+        `💊 @${username} wziął klina! 🧊 ŚWIEŻAK`
       );
     }
 
@@ -106,7 +106,7 @@ export default async function handler(req, res) {
       }
 
       return res.status(200).send(
-        `🧊 @${username} wziął klina! 🍺 ŚWIEŻAK`
+        `💊 @${username} wziął klina! 🧊 ŚWIEŻAK`
       );
     }
 
@@ -137,7 +137,7 @@ export default async function handler(req, res) {
     }
 
     return res.status(200).send(
-      `🧊 @${username} wziął klina! 🍺 ŚWIEŻAK`
+      `💊@${username} wziął klina! 🧊 ŚWIEŻAK`
     );
 
   } catch (error) {
