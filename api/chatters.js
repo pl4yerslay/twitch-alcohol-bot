@@ -1,38 +1,41 @@
 export default async function handler(req, res) {
   try {
     const clientId = process.env.TWITCH_CLIENT_ID;
-    const clientSecret = process.env.TWITCH_CLIENT_SECRET;
+    const supabaseUrl = process.env.SUPABASE_URL;
+    const supabaseKey = process.env.SUPABASE_KEY;
 
-    if (!clientId || !clientSecret) {
+    if (!clientId) {
       return res.status(500).json({
-        error: "Brak TWITCH_CLIENT_ID lub TWITCH_CLIENT_SECRET"
+        error: "Brak TWITCH_CLIENT_ID"
       });
     }
 
-    // 1. Pobieramy token aplikacji
+    if (!supabaseUrl || !supabaseKey) {
+      return res.status(500).json({
+        error: "Brak SUPABASE_URL lub SUPABASE_KEY"
+      });
+    }
+
+    // 1. Pobieramy zapisany User Access Token z Supabase
     const tokenResponse = await fetch(
-      "https://id.twitch.tv/oauth2/token",
+      `${supabaseUrl}/rest/v1/twitch_auth?select=access_token&order=id.desc&limit=1`,
       {
-        method: "POST",
         headers: {
-          "Content-Type": "application/x-www-form-urlencoded"
-        },
-        body: new URLSearchParams({
-          client_id: clientId,
-          client_secret: clientSecret,
-          grant_type: "client_credentials"
-        })
+          "apikey": supabaseKey,
+          "Authorization": `Bearer ${supabaseKey}`
+        }
       }
     );
 
     const tokenData = await tokenResponse.json();
 
-    if (!tokenResponse.ok) {
+    if (!tokenResponse.ok || !tokenData.length) {
       return res.status(500).json({
-        error: "Nie udało się pobrać tokena Twitch",
-        details: tokenData
+        error: "Nie znaleziono tokena Twitch w Supabase"
       });
     }
+
+    const accessToken = tokenData[0].access_token;
 
     // 2. Pobieramy ID kanału pl4yerslay
     const userResponse = await fetch(
@@ -40,7 +43,7 @@ export default async function handler(req, res) {
       {
         headers: {
           "Client-ID": clientId,
-          "Authorization": `Bearer ${tokenData.access_token}`
+          "Authorization": `Bearer ${accessToken}`
         }
       }
     );
@@ -48,8 +51,9 @@ export default async function handler(req, res) {
     const userData = await userResponse.json();
 
     if (!userResponse.ok || !userData.data?.length) {
-      return res.status(500).json({
-        error: "Nie znaleziono kanału Twitch"
+      return res.status(userResponse.status).json({
+        error: "Nie znaleziono kanału Twitch",
+        details: userData
       });
     }
 
@@ -61,7 +65,7 @@ export default async function handler(req, res) {
       {
         headers: {
           "Client-ID": clientId,
-          "Authorization": `Bearer ${tokenData.access_token}`
+          "Authorization": `Bearer ${accessToken}`
         }
       }
     );
@@ -88,4 +92,4 @@ export default async function handler(req, res) {
       details: error.message
     });
   }
- }
+}
