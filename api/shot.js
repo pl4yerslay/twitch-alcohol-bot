@@ -109,7 +109,7 @@ export default async function handler(req, res) {
     // =========================
 
     if (users.length === 0) {
-      const xp = 1;
+      const xp = 5000;
       const { level, title } = getLevelData(xp);
 
       const createResponse = await fetch(
