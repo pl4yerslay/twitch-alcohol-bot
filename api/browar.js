@@ -22,6 +22,40 @@ export default async function handler(req, res) {
       "Content-Type": "application/json"
     };
 
+    function getLevelData(xp) {
+      let level;
+
+      if (xp < 150) {
+        level = Math.floor(xp / 30) + 1;
+      } else if (xp < 650) {
+        level = 6 + Math.floor((xp - 150) / 50);
+      } else if (xp < 1550) {
+        level = 16 + Math.floor((xp - 650) / 60);
+      } else {
+        level = 31 + Math.floor((xp - 1550) / 80);
+
+        if (level > 50) {
+          level = 50;
+        }
+      }
+
+      let title;
+
+      if (level <= 5) {
+        title = "Świeżak";
+      } else if (level <= 10) {
+        title = "Alkoholik";
+      } else if (level <= 20) {
+        title = "Weteran";
+      } else if (level <= 35) {
+        title = "Alchemik";
+      } else {
+        title = "Legenda";
+      }
+
+      return { level, title };
+    }
+
     // 1. Aktualny stream
     const streamResponse = await fetch(
       `${supabaseUrl}/rest/v1/alcohol_streams?order=created_at.desc&limit=1`,
@@ -99,7 +133,7 @@ export default async function handler(req, res) {
 
     const chattersData = await chattersResponse.json();
 
-    // 5. Usuwamy osobę używającą komendy z możliwości losowania
+    // 5. Usuwamy osobę używającą komendy z losowania
     const possibleUsers = chattersData.data.filter(
       chatter =>
         chatter.user_login &&
@@ -112,13 +146,13 @@ export default async function handler(req, res) {
       );
     }
 
-    // 6. Losujemy USER2
+    // 6. Losujemy drugiego użytkownika
     const user2 =
       possibleUsers[Math.floor(Math.random() * possibleUsers.length)];
 
     const username2 = user2.user_login.toLowerCase();
 
-    // 7. Funkcja dodająca browara
+    // 7. Funkcja dodająca browara + XP
     async function giveBeer(targetUsername) {
       const userResponse = await fetch(
         `${supabaseUrl}/rest/v1/alcohol_users?username=eq.${encodeURIComponent(targetUsername)}`,
@@ -135,6 +169,9 @@ export default async function handler(req, res) {
 
       // Nowy użytkownik
       if (!users.length) {
+        const xp = 1;
+        const { level, title } = getLevelData(xp);
+
         const createResponse = await fetch(
           `${supabaseUrl}/rest/v1/alcohol_users`,
           {
@@ -150,7 +187,13 @@ export default async function handler(req, res) {
               klins: 0,
               promile: 0.40,
               kac: 2.00,
-              stream_id: currentStreamId
+              stream_id: currentStreamId,
+
+              xp: xp,
+              level: level,
+              title: title,
+              wins: 0,
+              losses: 0
             })
           }
         );
@@ -169,6 +212,9 @@ export default async function handler(req, res) {
 
       // Użytkownik ze starego streama
       if (user.stream_id !== currentStreamId) {
+        const newXp = Number(user.xp || 0) + 1;
+        const { level, title } = getLevelData(newXp);
+
         const resetResponse = await fetch(
           `${supabaseUrl}/rest/v1/alcohol_users?username=eq.${encodeURIComponent(targetUsername)}`,
           {
@@ -183,7 +229,11 @@ export default async function handler(req, res) {
               klins: 0,
               promile: 0.40,
               kac: 2.00,
-              stream_id: currentStreamId
+              stream_id: currentStreamId,
+
+              xp: newXp,
+              level: level,
+              title: title
             })
           }
         );
@@ -203,6 +253,9 @@ export default async function handler(req, res) {
       const newPromile = Number(user.promile || 0) + 0.40;
       const newKac = Number(user.kac || 0) + 2.00;
 
+      const newXp = Number(user.xp || 0) + 1;
+      const { level, title } = getLevelData(newXp);
+
       const updateResponse = await fetch(
         `${supabaseUrl}/rest/v1/alcohol_users?username=eq.${encodeURIComponent(targetUsername)}`,
         {
@@ -214,7 +267,11 @@ export default async function handler(req, res) {
           body: JSON.stringify({
             beers: newBeers,
             promile: newPromile,
-            kac: newKac
+            kac: newKac,
+
+            xp: newXp,
+            level: level,
+            title: title
           })
         }
       );
@@ -227,13 +284,13 @@ export default async function handler(req, res) {
       }
     }
 
-    // 8. Browar dostają obie osoby
+    // 8. Browara dostają obie osoby
     await giveBeer(username);
     await giveBeer(username2);
 
-    // 9. Wiadomość na czat
+    // 9. Wiadomość
     return res.status(200).send(
-      `🍺 @${username} wali browca z @${username2} 🍻 ALKOHOLICY`
+      `🍺 @${username} wali browca z @${username2} 🍻 ALKOHOLICY | ⭐ +1 XP`
     );
 
   } catch (error) {
