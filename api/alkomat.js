@@ -51,7 +51,7 @@ export default async function handler(req, res) {
       users[0].stream_id !== currentStreamId
     ) {
       return res.status(200).send(
-        `🧪 Alkomat @${username}: 0,00‰. 🟢 Czysty jak łza!`
+        `🧪 Alkomat @${username}: 0,00‰. 🟢 Czysty jak łza! 🚨 POLICE 🚨`
       );
     }
 
@@ -60,31 +60,10 @@ export default async function handler(req, res) {
     let message;
 
     if (promile <= 0) {
-      message = `🧪 Alkomat @${username}: 0,00‰. 🟢 Czysty jak łza!`;
+      message = `🧪 Alkomat @${username}: 0,00‰. 🟢 Czysty jak łza! 🚨 POLICE 🚨`;
     } else if (promile < 0.80) {
-      message = `🧪 Alkomat @${username}: ${promile.toFixed(2).replace(".", ",")}‰. 🟢 Coś już krąży.`;
+      message = `🧪 Alkomat @${username}: ${promile.toFixed(2).replace(".", ",")}‰. 🟢 Coś już krąży. 🚨 POLICE 🚨`;
     } else if (promile < 1.60) {
-      message = `🧪 Alkomat @${username}: ${promile.toFixed(2).replace(".", ",")}‰. 🟡 No dobra, już coś jest. 😂`;
+      message = `🧪 Alkomat @${username}: ${promile.toFixed(2).replace(".", ",")}‰. 🟡 No dobra, już coś jest. 😂 🚨 POLICE 🚨`;
     } else if (promile < 2.20) {
-      message = `🧪 Alkomat @${username}: ${promile.toFixed(2).replace(".", ",")}‰. 🟠 Zaczyna być grubo.`;
-    } else if (promile < 3.00) {
-      message = `🧪 Alkomat @${username}: ${promile.toFixed(2).replace(".", ",")}‰. 🔴 To już nie jest niewinne picie.`;
-    } else if (promile < 3.80) {
-      message = `🧪 Alkomat @${username}: ${promile.toFixed(2).replace(".", ",")}‰. 🔴 Chat, chyba mamy problem. 😂`;
-    } else if (promile < 4.00) {
-      message = `🧪 Alkomat @${username}: ${promile.toFixed(2).replace(".", ",")}‰. 💀 Organizm prosi o litość.`;
-    } else {
-      message = `🧪 Alkomat @${username}: ${promile.toFixed(2).replace(".", ",")}‰. ☠️ Alkomat chyba właśnie stracił wiarę w ludzkość.`;
-    }
-
-    return res.status(200).send(message);
-
-  } catch (error) {
-    console.error(error);
-
-    return res.status(500).json({
-      error: "Wystąpił błąd serwera",
-      details: error.message
-    });
-  }
- }
+      message = `🧪 Alkom
