@@ -15,7 +15,41 @@ export default async function handler(req, res) {
       "Content-Type": "application/json"
     };
 
-    // Pobieramy aktualną sesję
+    function getLevelData(xp) {
+      let level;
+
+      if (xp < 150) {
+        level = Math.floor(xp / 30) + 1;
+      } else if (xp < 650) {
+        level = 6 + Math.floor((xp - 150) / 50);
+      } else if (xp < 1550) {
+        level = 16 + Math.floor((xp - 650) / 60);
+      } else {
+        level = 31 + Math.floor((xp - 1550) / 80);
+
+        if (level > 50) {
+          level = 50;
+        }
+      }
+
+      let title;
+
+      if (level <= 5) {
+        title = "Świeżak";
+      } else if (level <= 10) {
+        title = "Alkoholik";
+      } else if (level <= 20) {
+        title = "Weteran";
+      } else if (level <= 35) {
+        title = "Alchemik";
+      } else {
+        title = "Legenda";
+      }
+
+      return { level, title };
+    }
+
+    // Aktualny stream
     const streamResponse = await fetch(
       `${supabaseUrl}/rest/v1/alcohol_streams?order=created_at.desc&limit=1`,
       { headers }
@@ -45,8 +79,11 @@ export default async function handler(req, res) {
 
     const users = await userResponse.json();
 
-    // Użytkownik jeszcze nie istnieje
+    // Nowy użytkownik
     if (users.length === 0) {
+      const xp = 1;
+      const { level, title } = getLevelData(xp);
+
       const createResponse = await fetch(
         `${supabaseUrl}/rest/v1/alcohol_users`,
         {
@@ -62,7 +99,13 @@ export default async function handler(req, res) {
             klins: 1,
             promile: 0.30,
             kac: 0,
-            stream_id: currentStreamId
+            stream_id: currentStreamId,
+
+            xp: xp,
+            level: level,
+            title: title,
+            wins: 0,
+            losses: 0
           })
         }
       );
@@ -73,14 +116,17 @@ export default async function handler(req, res) {
       }
 
       return res.status(200).send(
-        `💊 @${username} wziął klina! 🧊 ŚWIEŻAK`
+        `💊 @${username} wziął klina! 🧊 ŚWIEŻAK | ⭐ +1 XP`
       );
     }
 
     const user = users[0];
 
-    // NOWY STREAM
+    // Nowy stream
     if (user.stream_id !== currentStreamId) {
+      const newXp = Number(user.xp || 0) + 1;
+      const { level, title } = getLevelData(newXp);
+
       const resetResponse = await fetch(
         `${supabaseUrl}/rest/v1/alcohol_users?username=eq.${encodeURIComponent(username)}`,
         {
@@ -95,7 +141,11 @@ export default async function handler(req, res) {
             klins: 1,
             promile: 0.30,
             kac: 0,
-            stream_id: currentStreamId
+            stream_id: currentStreamId,
+
+            xp: newXp,
+            level: level,
+            title: title
           })
         }
       );
@@ -106,14 +156,20 @@ export default async function handler(req, res) {
       }
 
       return res.status(200).send(
-        `💊 @${username} wziął klina! 🧊 ŚWIEŻAK`
+        `💊 @${username} wziął klina! 🧊 ŚWIEŻAK | ⭐ +1 XP`
       );
     }
 
-    // TEN SAM STREAM
+    // Ten sam stream
     const newKlins = Number(user.klins || 0) + 1;
     const newPromile = Number(user.promile || 0) + 0.30;
     const newKac = Math.max(0, Number(user.kac || 0) - 0.50);
+
+    const oldXp = Number(user.xp || 0);
+    const newXp = oldXp + 1;
+
+    const oldLevel = Number(user.level || 1);
+    const { level: newLevel, title: newTitle } = getLevelData(newXp);
 
     const updateResponse = await fetch(
       `${supabaseUrl}/rest/v1/alcohol_users?username=eq.${encodeURIComponent(username)}`,
@@ -126,7 +182,11 @@ export default async function handler(req, res) {
         body: JSON.stringify({
           klins: newKlins,
           promile: newPromile,
-          kac: newKac
+          kac: newKac,
+
+          xp: newXp,
+          level: newLevel,
+          title: newTitle
         })
       }
     );
@@ -136,8 +196,14 @@ export default async function handler(req, res) {
       throw new Error(`Błąd aktualizacji użytkownika: ${errorText}`);
     }
 
+    if (newLevel > oldLevel) {
+      return res.status(200).send(
+        `🎉 @${username} wbił POZIOM ${newLevel}! ⭐ ${newXp} XP | 🏷️ ${newTitle} | 💊 Klin! 🧊`
+      );
+    }
+
     return res.status(200).send(
-      `💊@${username} wziął klina! 🧊 ŚWIEŻAK`
+      `💊 @${username} wziął klina! 🧊 ŚWIEŻAK | ⭐ +1 XP`
     );
 
   } catch (error) {
@@ -148,4 +214,4 @@ export default async function handler(req, res) {
       details: error.message
     });
   }
-}
+ }
