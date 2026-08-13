@@ -106,4 +106,142 @@ export default async function handler(req, res) {
         chatter.user_login.toLowerCase() !== username
     );
 
-   
+    if (!possibleUsers.length) {
+      return res.status(200).send(
+        `🍺 @${username} nie ma z kim walić browca! Potrzeba jeszcze jednego alkoholika 😂`
+      );
+    }
+
+    // 6. Losujemy USER2
+    const user2 =
+      possibleUsers[Math.floor(Math.random() * possibleUsers.length)];
+
+    const username2 = user2.user_login.toLowerCase();
+
+    // 7. Funkcja dodająca browara
+    async function giveBeer(targetUsername) {
+      const userResponse = await fetch(
+        `${supabaseUrl}/rest/v1/alcohol_users?username=eq.${encodeURIComponent(targetUsername)}`,
+        { headers }
+      );
+
+      if (!userResponse.ok) {
+        throw new Error(
+          `Nie udało się pobrać użytkownika ${targetUsername}`
+        );
+      }
+
+      const users = await userResponse.json();
+
+      // Nowy użytkownik
+      if (!users.length) {
+        const createResponse = await fetch(
+          `${supabaseUrl}/rest/v1/alcohol_users`,
+          {
+            method: "POST",
+            headers: {
+              ...headers,
+              Prefer: "return=representation"
+            },
+            body: JSON.stringify({
+              username: targetUsername,
+              shots: 0,
+              beers: 1,
+              klins: 0,
+              promile: 0.40,
+              kac: 2.00,
+              stream_id: currentStreamId
+            })
+          }
+        );
+
+        if (!createResponse.ok) {
+          const errorText = await createResponse.text();
+          throw new Error(
+            `Błąd tworzenia ${targetUsername}: ${errorText}`
+          );
+        }
+
+        return;
+      }
+
+      const user = users[0];
+
+      // Użytkownik ze starego streama
+      if (user.stream_id !== currentStreamId) {
+        const resetResponse = await fetch(
+          `${supabaseUrl}/rest/v1/alcohol_users?username=eq.${encodeURIComponent(targetUsername)}`,
+          {
+            method: "PATCH",
+            headers: {
+              ...headers,
+              Prefer: "return=representation"
+            },
+            body: JSON.stringify({
+              shots: 0,
+              beers: 1,
+              klins: 0,
+              promile: 0.40,
+              kac: 2.00,
+              stream_id: currentStreamId
+            })
+          }
+        );
+
+        if (!resetResponse.ok) {
+          const errorText = await resetResponse.text();
+          throw new Error(
+            `Błąd resetowania ${targetUsername}: ${errorText}`
+          );
+        }
+
+        return;
+      }
+
+      // Ten sam stream
+      const newBeers = Number(user.beers || 0) + 1;
+      const newPromile = Number(user.promile || 0) + 0.40;
+      const newKac = Number(user.kac || 0) + 2.00;
+
+      const updateResponse = await fetch(
+        `${supabaseUrl}/rest/v1/alcohol_users?username=eq.${encodeURIComponent(targetUsername)}`,
+        {
+          method: "PATCH",
+          headers: {
+            ...headers,
+            Prefer: "return=representation"
+          },
+          body: JSON.stringify({
+            beers: newBeers,
+            promile: newPromile,
+            kac: newKac
+          })
+        }
+      );
+
+      if (!updateResponse.ok) {
+        const errorText = await updateResponse.text();
+        throw new Error(
+          `Błąd aktualizacji ${targetUsername}: ${errorText}`
+        );
+      }
+    }
+
+    // 8. Browar dostają obie osoby
+    await giveBeer(username);
+    await giveBeer(username2);
+
+    // 9. Wiadomość na czat
+    return res.status(200).send(
+      `🍺 @${username} wali browca z @${username2} 🍻 ALKOHOLICY`
+    );
+
+  } catch (error) {
+    console.error(error);
+
+    return res.status(500).json({
+      error: "Wystąpił błąd serwera",
+      details: error.message
+    });
+  }
+ }
