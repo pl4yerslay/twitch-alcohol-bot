@@ -45,7 +45,7 @@ export default async function handler(req, res) {
 
     if (users.length === 0) {
       return res.status(200).send(
-        `📊 @${username} nie ma jeszcze żadnych statystyk w tym streamie. 🍻`
+        `📊 @${username} nie ma jeszcze żadnych statystyk w tym streamie. 🍻 🤮NAJEBUS🤮`
       );
     }
 
@@ -53,7 +53,7 @@ export default async function handler(req, res) {
 
     if (user.stream_id !== currentStreamId) {
       return res.status(200).send(
-        `📊 @${username} nie wypił jeszcze nic w tym streamie. 🍻`
+        `📊 @${username} nie wypił jeszcze nic w tym streamie. 🍻 🤮NAJEBUS🤮`
       );
     }
 
@@ -90,7 +90,7 @@ export default async function handler(req, res) {
     }
 
     return res.status(200).send(
-      `📊 @${username} | 🥃 Shoty: ${shots} | 🍺 Piwa: ${beers} | 🍸 Kliny: ${klins} | 🧠 Trzeźwość: ${trzezwosc}% | 🤢 Kac: ${kac.toFixed(2)}`
+      `📊 @${username} | 🥃 Shoty: ${shots} | 🍺 Piwa: ${beers} | 🍸 Kliny: ${klins} | 🧠 Trzeźwość: ${trzezwosc}% | 🤢 Kac: ${kac.toFixed(2)} | 🤮NAJEBUS🤮`
     );
 
   } catch (error) {
@@ -101,4 +101,4 @@ export default async function handler(req, res) {
       details: error.message
     });
   }
- }
+}
