@@ -15,7 +15,6 @@ export default async function handler(req, res) {
       "Content-Type": "application/json"
     };
 
-    // Pobieramy aktualny stream
     const streamResponse = await fetch(
       `${supabaseUrl}/rest/v1/alcohol_streams?order=created_at.desc&limit=1`,
       { headers }
@@ -33,7 +32,6 @@ export default async function handler(req, res) {
 
     const currentStreamId = streams[0].id;
 
-    // Pobieramy użytkownika
     const userResponse = await fetch(
       `${supabaseUrl}/rest/v1/alcohol_users?username=eq.${encodeURIComponent(username)}`,
       { headers }
@@ -45,7 +43,6 @@ export default async function handler(req, res) {
 
     const users = await userResponse.json();
 
-    // Brak użytkownika
     if (users.length === 0) {
       return res.status(200).send(
         `📊 @${username} nie ma jeszcze żadnych statystyk w tym streamie. 🍻`
@@ -54,7 +51,6 @@ export default async function handler(req, res) {
 
     const user = users[0];
 
-    // Użytkownik pochodzi ze starego streama
     if (user.stream_id !== currentStreamId) {
       return res.status(200).send(
         `📊 @${username} nie wypił jeszcze nic w tym streamie. 🍻`
@@ -64,11 +60,37 @@ export default async function handler(req, res) {
     const shots = Number(user.shots || 0);
     const beers = Number(user.beers || 0);
     const klins = Number(user.klins || 0);
-    const promile = Number(user.promile || 0).toFixed(2);
-    const kac = Number(user.kac || 0).toFixed(2);
+    const promile = Number(user.promile || 0);
+    const kac = Number(user.kac || 0);
+
+    let trzezwosc;
+
+    if (promile <= 0) {
+      trzezwosc = 100;
+    } else if (promile < 0.80) {
+      trzezwosc = 90;
+    } else if (promile < 1.20) {
+      trzezwosc = 80;
+    } else if (promile < 1.80) {
+      trzezwosc = 70;
+    } else if (promile < 2.20) {
+      trzezwosc = 60;
+    } else if (promile < 2.60) {
+      trzezwosc = 50;
+    } else if (promile < 3.00) {
+      trzezwosc = 40;
+    } else if (promile < 3.40) {
+      trzezwosc = 30;
+    } else if (promile < 3.80) {
+      trzezwosc = 20;
+    } else if (promile < 4.00) {
+      trzezwosc = 10;
+    } else {
+      trzezwosc = 0;
+    }
 
     return res.status(200).send(
-      `📊 @${username} | 🥃 Shoty: ${shots} | 🍺 Piwa: ${beers} | 🍸 Kliny: ${klins} | 🥴 ${promile}‰ | 🤢 Kac: ${kac}`
+      `📊 @${username} | 🥃 Shoty: ${shots} | 🍺 Piwa: ${beers} | 🍸 Kliny: ${klins} | 🧠 Trzeźwość: ${trzezwosc}% | 🤢 Kac: ${kac.toFixed(2)}`
     );
 
   } catch (error) {
