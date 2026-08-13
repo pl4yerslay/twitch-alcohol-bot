@@ -1,16 +1,13 @@
 export default async function handler(req, res) {
   try {
-    const username = (req.query.username || "").toLowerCase().trim();
-
-    // Tylko właściciel bota może wykonać reset
-    if (username !== "pl4yerslay") {
-      return res.status(403).send(
-        "⛔ Nie masz uprawnień do resetowania alkoholizacji."
-      );
-    }
-
     const supabaseUrl = process.env.SUPABASE_URL;
     const supabaseKey = process.env.SUPABASE_KEY;
+
+    if (!supabaseUrl || !supabaseKey) {
+      return res.status(500).json({
+        error: "Brak SUPABASE_URL lub SUPABASE_KEY"
+      });
+    }
 
     const headers = {
       apikey: supabaseKey,
@@ -18,61 +15,67 @@ export default async function handler(req, res) {
       "Content-Type": "application/json"
     };
 
-    // Pobieramy ostatni stream
+    // Pobieramy aktualny stream
     const streamResponse = await fetch(
       `${supabaseUrl}/rest/v1/alcohol_streams?order=created_at.desc&limit=1`,
       { headers }
     );
 
     if (!streamResponse.ok) {
-      throw new Error("Nie udało się pobrać ostatniego streama");
+      throw new Error("Nie udało się pobrać aktualnego streama");
     }
 
     const streams = await streamResponse.json();
 
-    let nextNumber = 1;
-
-    if (streams.length > 0) {
-      const lastId = streams[0].id;
-      const match = String(lastId).match(/^stream-(\d+)$/);
-
-      if (match) {
-        nextNumber = Number(match[1]) + 1;
-      }
+    if (streams.length === 0) {
+      throw new Error("Brak aktywnej sesji streama");
     }
 
-    const newStreamId = `stream-${nextNumber}`;
+    const currentStreamId = streams[0].id;
 
-    // Tworzymy nową sesję
-    const createResponse = await fetch(
-      `${supabaseUrl}/rest/v1/alcohol_streams`,
+    // Reset wszystkich użytkowników w aktualnym streamie
+    const resetResponse = await fetch(
+      `${supabaseUrl}/rest/v1/alcohol_users?stream_id=eq.${encodeURIComponent(currentStreamId)}`,
       {
-        method: "POST",
+        method: "PATCH",
         headers: {
           ...headers,
           Prefer: "return=representation"
         },
         body: JSON.stringify({
-          id: newStreamId
+          shots: 0,
+          beers: 0,
+          klins: 0,
+          promile: 0,
+          kac: 0
         })
       }
     );
 
-    if (!createResponse.ok) {
-      const errorText = await createResponse.text();
-      throw new Error(`Nie udało się utworzyć nowego streama: ${errorText}`);
+    const resetData = await resetResponse.text();
+
+    if (!resetResponse.ok) {
+      throw new Error(`Błąd resetowania: ${resetData}`);
+    }
+
+    let resetUsers = [];
+
+    try {
+      resetUsers = JSON.parse(resetData);
+    } catch {
+      resetUsers = [];
     }
 
     return res.status(200).send(
-      `🔄 Nowy stream rozpoczęty! Alkoholizacja została zresetowana. 🍻 [${newStreamId}]`
+      `🔄 ALKO RESET! Wyzerowano statystyki ${resetUsers.length} użytkowników. 🧹`
     );
 
   } catch (error) {
     console.error(error);
 
     return res.status(500).json({
-      error: "Nie udało się wykonać resetu",
+      error: "Wystąpił błąd serwera",
       details: error.message
     });
   }
-}
+ }
